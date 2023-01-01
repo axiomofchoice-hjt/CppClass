@@ -1,4 +1,4 @@
-#include "Word.h"
+#include "Lexer.h"
 
 #include <cctype>
 #include <functional>
@@ -32,6 +32,19 @@ std::string nextWord(const char *&s) {
     return res;
 }
 
-bool isName(const std::string &s) {
-    return !s.empty() && isNameStartChar(s[0]);
+bool Word::isName() const {
+    return !value.empty() && isNameStartChar(value[0]);
+}
+
+std::vector<Word> Lexer(const std::string &s) {
+    std::vector<Word> res;
+    const char *ptr = s.c_str();
+    while (true) {
+        std::string word = nextWord(ptr);
+        if (word.empty()) {
+            break;
+        }
+        res.emplace_back(word);
+    }
+    return res;
 }
