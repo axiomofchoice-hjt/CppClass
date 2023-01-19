@@ -12,7 +12,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${PROJECT_NAME} ${DIR_SRCS} ${PROTO_SRCS} ${PROTO_HDRS})
 
-add_definitions("-Wall -g")
+add_compile_options(-Wall -g)
 
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${PROJECT_NAME} ${Protobuf_LIBRARIES})

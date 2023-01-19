@@ -9,6 +9,13 @@ void Block::parseEnumContent(std::vector<Word>::const_iterator l,
         }
         elements.emplace_back(word->value);
         word++;
+        if (word->value == "(" && word[1].value == ")") {
+            word += 2;
+        }
+        if (word->value == "(" && word[1].isName() && word[2].value == ")") {
+            elements.back().value = word[1].value;
+            word += 3;
+        }
         if (word == r) {
             continue;
         }
