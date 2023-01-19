@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+namespace Compiler {
 class Word {
    public:
     std::string value;
@@ -12,3 +13,4 @@ class Word {
 };
 
 std::vector<Word> Lexer(const std::string &s);
+}  // namespace Compiler

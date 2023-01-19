@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+namespace Compiler {
 void Block::parseEnumContent(std::vector<Word>::const_iterator l,
                              std::vector<Word>::const_iterator r) {
     auto word = l;
@@ -51,6 +52,15 @@ void Block::parseClassContent(std::vector<Word>::const_iterator l,
     }
 }
 
+bool Block::isComplexEnum() const {
+    for (auto i : elements) {
+        if (!i.value.empty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::vector<Block> Parser(const std::vector<Word> &words) {
     auto word = words.begin();
     std::vector<Block> res;
@@ -94,3 +104,4 @@ std::vector<Block> Parser(const std::vector<Word> &words) {
     }
     return res;
 }
+}  // namespace Compiler

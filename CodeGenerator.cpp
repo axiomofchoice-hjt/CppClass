@@ -3,73 +3,90 @@
 #include <cstring>
 #include <initializer_list>
 
-CodeGenerator::CodeGenerator() : indent(4) {}
+#include "Fmt.h"
 
-void string_append(std::string &res, const std::string &s) { res += s; }
+namespace Compiler {
+CodeGenerator::CodeGenerator(const std::vector<Block> &blocks)
+    : indent(4), blocks(blocks) {}
 
-template <class T>
-void string_append(std::string &res, const T &s) {
-    res += std::to_string(s);
-}
+const char *TAG_CLASS_NAME = "Tag";
+const char *TAG_VAR_NAME = "tag";
+const char *UNION_CLASS_NAME = "Data";
+const char *UNION_VAR_NAME = "data";
 
-template <class T>
-void format_one(std::string &res, const char *&s, const T &arg) {
-    for (; *s != 0; s++) {
-        if (*s == '%' && s[1] == 's') {
-            break;
-        } else {
-            res.push_back(*s);
-        }
-    }
-    if (*s == 0) {
-        throw "error: in format, `%s` not found";
-    }
-    string_append(res, arg);
-    s += 2;
-}
-
-void format(std::string &res, const char *s) { res += s; }
-
-template <class T, class... Args>
-void format(std::string &res, const char *s, const T &arg, Args... rest) {
-    format_one(res, s, arg);
-    format(res, s, rest...);
-}
-
-std::string CodeGenerator::header(const std::vector<Block> &blocks) {
-    std::string res;
+std::string CodeGenerator::header() {
+    Fmt res;
+    res.print("#pragma once\n");
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
-            format(res, "class %s {\n", block.name);
-            format(res, "   public:\n");
-            format(res, "    enum class Tag {\n");
-            for (auto i : block.elements) {
-                format(res, "        %s,\n", i.key);
+            bool complex = block.isComplexEnum();
+            res.print("class %s {\n", block.name);
+            {
+                auto guard = res.indent_guard();
+                res.print_public();
+                res.print("%s();\n", block.name);
+                res.print("enum class %s {\n", TAG_CLASS_NAME);
+                {
+                    auto guard = res.indent_guard();
+                    res.print("UNDEF,\n");
+                    for (auto i : block.elements) {
+                        res.print("%s,\n", i.key);
+                    }
+                }
+                res.print("};\n");
+                res.print("%s %s;\n", TAG_CLASS_NAME, TAG_VAR_NAME);
+                if (complex) {
+                    res.print("union %s {\n", UNION_CLASS_NAME);
+                    res.print("};\n");
+                    res.print("%s %s;\n", UNION_CLASS_NAME, UNION_VAR_NAME);
+                }
+                for (auto i : block.elements) {
+                    res.print("static const %s %s(%s);\n", block.name, i.key,
+                              i.value);
+                }
+                res.print("bool operator==(%s other) const;\n", block.name);
+                res.print("bool operator!=(%s other) const;\n", block.name);
             }
-            format(res, "    };\n");
-            format(res, "    Tag tag;\n");
-            format(res, "    explicit %s(Tag tag) : tag(tag) {}\n", block.name);
-            for (auto i : block.elements) {
-                format(res, "    static const %s %s(%s);\n", block.name, i.key,
-                       i.value);
-            }
-            format(res,
-                   "    bool operator==(%s other) const { return __value == "
-                   "other.__value; }\n",
-                   block.name);
-            format(res,
-                   "    bool operator!=(%s other) const { return __value != "
-                   "other.__value; }\n",
-                   block.name);
-            format(res, "};\n");
+            res.print("};\n");
         } else if (block.type == BlockType::Class) {
-            format(res, "class %s {\n", block.name);
-            format(res, "   public:\n");
+            res.print("class %s {\n", block.name);
+            res.print("   public:\n");
             for (auto i : block.elements) {
-                format(res, "    %s %s;\n", i.value, i.key);
+                res.print("    %s %s;\n", i.value, i.key);
             }
-            format(res, "};\n");
+            res.print("};\n");
         }
     }
-    return res;
+    return res.recv.data;
 }
+
+std::string CodeGenerator::source(const std::string &baseName) {
+    Fmt res;
+    res.print("#include \"%s.h\"\n", baseName);
+    for (auto block : blocks) {
+        if (block.type == BlockType::Enum) {
+            res.print("%s::%s() : %s(%s::%s::UNDEF) {}\n", block.name,
+                      block.name, TAG_VAR_NAME, block.name, TAG_CLASS_NAME);
+            for (auto i : block.elements) {
+                res.print("const %s %s::%s(%s) {\n", block.name, block.name,
+                          i.key, i.value);
+                res.print("    %s res;\n", block.name);
+                res.print("    res.%s = %s::%s::%s;\n", TAG_VAR_NAME,
+                          block.name, TAG_CLASS_NAME, i.key);
+                res.print("    return res;\n");
+                res.print("}\n");
+            }
+            res.print(
+                "bool %s::operator==(%s other) const { return %s == "
+                "other.%s; }\n",
+                block.name, block.name, TAG_VAR_NAME, TAG_VAR_NAME);
+            res.print(
+                "bool %s::operator!=(%s other) const { return %s != "
+                "other.%s; }\n",
+                block.name, block.name, TAG_VAR_NAME, TAG_VAR_NAME);
+        } else if (block.type == BlockType::Class) {
+        }
+    }
+    return res.recv.data;
+}
+}  // namespace Compiler

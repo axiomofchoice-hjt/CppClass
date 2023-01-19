@@ -3,6 +3,7 @@
 #include <cctype>
 #include <functional>
 
+namespace Compiler {
 static const char *match(const char *s, const std::function<bool(char)> &f) {
     while (f(*s)) {
         s++;
@@ -48,3 +49,4 @@ std::vector<Word> Lexer(const std::string &s) {
     }
     return res;
 }
+}  // namespace Compiler

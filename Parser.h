@@ -5,6 +5,7 @@
 
 #include "Lexer.h"
 
+namespace Compiler {
 class Element {
    public:
     std::string key;
@@ -27,6 +28,8 @@ class Block {
                           std::vector<Word>::const_iterator r);
     void parseClassContent(std::vector<Word>::const_iterator l,
                            std::vector<Word>::const_iterator r);
+    bool isComplexEnum() const;
 };
 
 std::vector<Block> Parser(const std::vector<Word> &words);
+}  // namespace Compiler
