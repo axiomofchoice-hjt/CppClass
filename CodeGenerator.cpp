@@ -3,6 +3,7 @@
 #include <cstring>
 #include <initializer_list>
 
+#include "BuiltinTypes.h"
 #include "Fmt.h"
 
 namespace Compiler {
@@ -15,78 +16,152 @@ const char *UNION_CLASS_NAME = "Data";
 const char *UNION_VAR_NAME = "data";
 
 std::string CodeGenerator::header() {
-    Fmt res;
-    res.print("#pragma once\n");
+    Fmt fmt;
+    fmt.print("#pragma once\n");
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
-            bool complex = block.isComplexEnum();
-            res.print("class %s {\n", block.name);
+            bool use_union = block.isComplexEnum();
+            fmt.print("class %s {\n", block.name);
             {
-                auto guard = res.indent_guard();
-                res.print_public();
-                res.print("%s();\n", block.name);
-                res.print("enum class %s {\n", TAG_CLASS_NAME);
+                auto guard = fmt.indent_guard();
+                fmt.print_public();
+                // constructor
+                fmt.print("%s();\n", block.name);
+                // deconstructor
+                if (use_union) {
+                    fmt.print("~%s();\n", block.name);
+                }
+                // enum class
+                fmt.print("enum class %s {\n", TAG_CLASS_NAME);
                 {
-                    auto guard = res.indent_guard();
-                    res.print("UNDEF,\n");
+                    auto guard = fmt.indent_guard();
+                    fmt.print("UNDEF,\n");
                     for (auto i : block.elements) {
-                        res.print("%s,\n", i.key);
+                        fmt.print("%s,\n", i.key);
                     }
                 }
-                res.print("};\n");
-                res.print("%s %s;\n", TAG_CLASS_NAME, TAG_VAR_NAME);
-                if (complex) {
-                    res.print("union %s {\n", UNION_CLASS_NAME);
-                    res.print("};\n");
-                    res.print("%s %s;\n", UNION_CLASS_NAME, UNION_VAR_NAME);
+                fmt.print("};\n");
+                fmt.print("%s %s;\n", TAG_CLASS_NAME, TAG_VAR_NAME);
+                // union class
+                if (use_union) {
+                    fmt.print("union %s {\n", UNION_CLASS_NAME);
+                    {
+                        auto guard = fmt.indent_guard();
+                        fmt.print("char UNDEF;\n");
+                        for (auto i : block.elements) {
+                            if (!i.value.empty()) {
+                                fmt.print("%s %s;\n", i.value, i.key);
+                            }
+                        }
+                    }
+                    fmt.print("};\n");
+                    fmt.print("%s %s;\n", UNION_CLASS_NAME, UNION_VAR_NAME);
                 }
+                // static construct functions
                 for (auto i : block.elements) {
-                    res.print("static const %s %s(%s);\n", block.name, i.key,
+                    fmt.print("static const %s %s(%s);\n", block.name, i.key,
                               i.value);
                 }
-                res.print("bool operator==(%s other) const;\n", block.name);
-                res.print("bool operator!=(%s other) const;\n", block.name);
+                // equal operator
+                if (!use_union) {
+                    fmt.print("bool operator==(%s other) const;\n", block.name);
+                    fmt.print("bool operator!=(%s other) const;\n", block.name);
+                }
             }
-            res.print("};\n");
+            fmt.print("};\n");
         } else if (block.type == BlockType::Class) {
-            res.print("class %s {\n", block.name);
-            res.print("   public:\n");
+            fmt.print("class %s {\n", block.name);
+            fmt.print("   public:\n");
             for (auto i : block.elements) {
-                res.print("    %s %s;\n", i.value, i.key);
+                fmt.print("    %s %s;\n", i.value, i.key);
             }
-            res.print("};\n");
+            fmt.print("};\n");
         }
     }
-    return res.recv.data;
+    return fmt.recv.data;
 }
 
 std::string CodeGenerator::source(const std::string &baseName) {
-    Fmt res;
-    res.print("#include \"%s.h\"\n", baseName);
+    Fmt fmt;
+    fmt.print("#include \"%s.h\"\n", baseName);
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
-            res.print("%s::%s() : %s(%s::%s::UNDEF) {}\n", block.name,
-                      block.name, TAG_VAR_NAME, block.name, TAG_CLASS_NAME);
-            for (auto i : block.elements) {
-                res.print("const %s %s::%s(%s) {\n", block.name, block.name,
-                          i.key, i.value);
-                res.print("    %s res;\n", block.name);
-                res.print("    res.%s = %s::%s::%s;\n", TAG_VAR_NAME,
-                          block.name, TAG_CLASS_NAME, i.key);
-                res.print("    return res;\n");
-                res.print("}\n");
+            bool use_union = block.isComplexEnum();
+            // constructor
+            if (!use_union) {
+                fmt.print("%s::%s() : %s(%s::UNDEF) {}\n", block.name,
+                          block.name, TAG_VAR_NAME, TAG_CLASS_NAME);
+            } else {
+                fmt.print("%s::%s() : %s(%s::UNDEF), %s({0}) {}\n", block.name,
+                          block.name, TAG_VAR_NAME, TAG_CLASS_NAME,
+                          UNION_VAR_NAME);
             }
-            res.print(
-                "bool %s::operator==(%s other) const { return %s == "
-                "other.%s; }\n",
-                block.name, block.name, TAG_VAR_NAME, TAG_VAR_NAME);
-            res.print(
-                "bool %s::operator!=(%s other) const { return %s != "
-                "other.%s; }\n",
-                block.name, block.name, TAG_VAR_NAME, TAG_VAR_NAME);
+            // deconstructor
+            if (use_union) {
+                fmt.print("%s::~%s() {\n", block.name, block.name);
+                {
+                    auto guard = fmt.indent_guard();
+                    fmt.print("switch (%s) {\n", TAG_VAR_NAME);
+                    {
+                        auto guard = fmt.indent_guard();
+                        for (auto i : block.elements) {
+                            if (!i.value.empty() &&
+                                !no_deconstructor.count(i.value)) {
+                                fmt.print("case %d::%d:\n", TAG_CLASS_NAME,
+                                          i.key);
+                                {
+                                    auto guard = fmt.indent_guard();
+                                    fmt.print("%s.%s.~%s();\n", UNION_VAR_NAME,
+                                              i.key, i.value);
+                                    fmt.print("break;\n");
+                                }
+                            }
+                        }
+                        fmt.print("default:\n");
+                        fmt.print("    break;\n");
+                    }
+                    fmt.print("}\n");
+                }
+                fmt.print("}\n");
+            }
+            // static construct functions
+            for (auto i : block.elements) {
+                if (i.value.empty()) {
+                    fmt.print("const %s %s::%s() {\n", block.name, block.name,
+                              i.key);
+                    fmt.print("    %s res;\n", block.name);
+                    fmt.print("    res.%s = %s::%s;\n", TAG_VAR_NAME,
+                              TAG_CLASS_NAME, i.key);
+                    fmt.print("    return res;\n");
+                    fmt.print("}\n");
+                } else {
+                    fmt.print("const %s %s::%s(%s value) {\n", block.name,
+                              block.name, i.key, i.value);
+                    fmt.print("    %s res;\n", block.name);
+                    fmt.print("    res.%s = %s::%s;\n", TAG_VAR_NAME,
+                              TAG_CLASS_NAME, i.key);
+                    fmt.print("    res.%s.%s = value;\n", UNION_VAR_NAME,
+                              i.key);
+                    fmt.print("    return res;\n");
+                    fmt.print("}\n");
+                }
+            }
+            // equal operator
+            if (!use_union) {
+                fmt.print("bool %s::operator==(%s other) const {\n", block.name,
+                          block.name);
+                fmt.print("    return %s == other.%s;\n", TAG_VAR_NAME,
+                          TAG_VAR_NAME);
+                fmt.print("}\n");
+                fmt.print("bool %s::operator!=(%s other) const {\n", block.name,
+                          block.name);
+                fmt.print("    return %s != other.%s;\n", TAG_VAR_NAME,
+                          TAG_VAR_NAME);
+                fmt.print("}\n");
+            }
         } else if (block.type == BlockType::Class) {
         }
     }
-    return res.recv.data;
+    return fmt.recv.data;
 }
 }  // namespace Compiler
