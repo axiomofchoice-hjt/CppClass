@@ -6,7 +6,7 @@ enum Message {
 
 enum Result {
     Ok,
-    Err(int)
+    Err(Message)
 }
 
 class cl {

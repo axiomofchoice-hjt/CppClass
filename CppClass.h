@@ -1,40 +1,60 @@
 #ifndef __CPP_CLASS_H
 #define __CPP_CLASS_H
 
-#define This static_cast<Derive *>(this)
+#include <utility>
 
+#define This static_cast<Derive *>(this)
+#define CThis static_cast<const Derive *>(this)
+
+namespace CppClass {
 template <class Derive>
-class SinpleEnum {
+class SimpleEnum {
    public:
-    Derive &operator=(Derive &&other) {
+    void __assign(Derive &&other) {
         This->__del();
         This->__tag = other.__tag;
         other.__del();
-        return *This;
     }
-    Derive &operator=(const Derive &other) {
+    void __assign(const Derive &other) {
+        if (This == &other) {
+            return;
+        }
         This->__del();
         This->__tag = other.__tag;
-        return *This;
+    }
+    void __del() { This->__tag = Derive::__Tag::__UNDEF; }
+    bool operator==(const Derive &other) const {
+        return CThis->__tag == other.__tag;
+    }
+    bool operator!=(const Derive &other) const {
+        return CThis->__tag != other.__tag;
     }
 };
 template <class Derive>
 class ComplexEnum {
    public:
-    Derive &operator=(Derive &&other) {
+    void __assign(Derive &&other) {
         This->__del();
         This->__tag = other.__tag;
-        This->__data = std::move(other.__data);
+        This->__data.__assign(This->__tag, std::move(other.__data));
         other.__del();
-        return *This;
     }
-    Derive &operator=(Derive &&other) {
+    void __assign(const Derive &other) {
+        if (This == &other) {
+            return;
+        }
         This->__del();
         This->__tag = other.__tag;
-        This->__data = other.__data;
-        return *This;
+        This->__data.__assign(This->__tag, other.__data);
+    }
+    void __del() {
+        This->__data.__del(This->__tag);
+        This->__tag = Derive::__Tag::__UNDEF;
     }
 };
+}  // namespace CppClass
+
 #undef This
+#undef CThis
 
 #endif
