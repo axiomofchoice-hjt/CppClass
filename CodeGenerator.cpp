@@ -10,10 +10,14 @@ namespace Compiler {
 CodeGenerator::CodeGenerator(const std::vector<Block> &blocks)
     : indent(4), blocks(blocks) {}
 
-const char *TAG_CLASS_NAME = "Tag";
-const char *TAG_VAR_NAME = "tag";
-const char *UNION_CLASS_NAME = "Data";
-const char *UNION_VAR_NAME = "data";
+namespace Name {
+const char *Tag = "__Tag";
+const char *tag = "__tag";
+const char *undef_tag = "__UNDEF";
+const char *Data = "__Data";
+const char *data = "__data";
+const char *undef_data = "__UNDEF";
+}  // namespace Name
 
 std::string CodeGenerator::header() {
     Fmt fmt;
@@ -27,27 +31,34 @@ std::string CodeGenerator::header() {
                 fmt.print_public();
                 // constructor
                 fmt.print("%s();\n", block.name);
+                fmt.print("%s(%s &&);\n", block.name, block.name);
+                fmt.print("%s(const %s &);\n", block.name, block.name);
                 // deconstructor
-                if (use_union) {
-                    fmt.print("~%s();\n", block.name);
-                }
+                fmt.print("~%s();\n", block.name);
+                // assign operator
+                fmt.print("%s &operator=(%s &&);\n", block.name, block.name);
+                fmt.print("%s &operator=(const %s &);\n", block.name,
+                          block.name);
+
                 // enum class
-                fmt.print("enum class %s {\n", TAG_CLASS_NAME);
+                fmt.print("enum class %s {\n", Name::Tag);
                 {
                     auto guard = fmt.indent_guard();
-                    fmt.print("UNDEF,\n");
+                    fmt.print("__UNDEF,\n");
                     for (auto i : block.elements) {
                         fmt.print("%s,\n", i.key);
                     }
                 }
                 fmt.print("};\n");
-                fmt.print("%s %s;\n", TAG_CLASS_NAME, TAG_VAR_NAME);
+                fmt.print("%s %s;\n", Name::Tag, Name::tag);
                 // union class
                 if (use_union) {
-                    fmt.print("union %s {\n", UNION_CLASS_NAME);
+                    fmt.print("union %s {\n", Name::Data);
                     {
                         auto guard = fmt.indent_guard();
-                        fmt.print("char UNDEF;\n");
+                        fmt.print("%s();\n", Name::Data);
+                        fmt.print("~%s();\n", Name::Data);
+                        fmt.print("struct {} %d;\n", Name::undef_data);
                         for (auto i : block.elements) {
                             if (!i.value.empty()) {
                                 fmt.print("%s %s;\n", i.value, i.key);
@@ -55,7 +66,7 @@ std::string CodeGenerator::header() {
                         }
                     }
                     fmt.print("};\n");
-                    fmt.print("%s %s;\n", UNION_CLASS_NAME, UNION_VAR_NAME);
+                    fmt.print("%s %s;\n", Name::Data, Name::data);
                 }
                 // static construct functions
                 for (auto i : block.elements) {
@@ -67,6 +78,8 @@ std::string CodeGenerator::header() {
                     fmt.print("bool operator==(%s other) const;\n", block.name);
                     fmt.print("bool operator!=(%s other) const;\n", block.name);
                 }
+                // delete
+                fmt.print("void __del();\n");
             }
             fmt.print("};\n");
         } else if (block.type == BlockType::Class) {
@@ -83,46 +96,93 @@ std::string CodeGenerator::header() {
 
 std::string CodeGenerator::source(const std::string &baseName) {
     Fmt fmt;
-    fmt.print("#include \"%s.h\"\n", baseName);
+    fmt.print("#include \"%s.h\"\n\n", baseName);
+    fmt.print("#include <utility>\n\n");
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
             bool use_union = block.isComplexEnum();
             // constructor
-            if (!use_union) {
-                fmt.print("%s::%s() : %s(%s::UNDEF) {}\n", block.name,
-                          block.name, TAG_VAR_NAME, TAG_CLASS_NAME);
-            } else {
-                fmt.print("%s::%s() : %s(%s::UNDEF), %s({0}) {}\n", block.name,
-                          block.name, TAG_VAR_NAME, TAG_CLASS_NAME,
-                          UNION_VAR_NAME);
-            }
-            // deconstructor
+            Recv t;
+            t.append_format("%s(%s::%s)", Name::tag, Name::Tag,
+                            Name::undef_tag);
             if (use_union) {
-                fmt.print("%s::~%s() {\n", block.name, block.name);
+                t.append_format(", %s()", Name::data);
+            }
+            fmt.print("%s::%s() : %s {}\n", block.name, block.name, t.data);
+            fmt.print(
+                "%s::%s(%s &&other) : %s { *this = "
+                "std::move(other); }\n",
+                block.name, block.name, block.name, t.data);
+            fmt.print("%s::%s(const %s &other) : %s { *this = other; }\n",
+                      block.name, block.name, block.name, t.data);
+
+            // deconstructor
+            fmt.print("%s::~%s() { __del(); }\n", block.name, block.name);
+            // assign operator
+            fmt.print("%s &%s::operator=(%s &&other) {\n", block.name,
+                      block.name, block.name);
+            {
+                auto guard = fmt.indent_guard();
+                fmt.print("__del();\n");
+                fmt.print("%s = other.%s;\n", Name::tag, Name::tag);
+                fmt.print("switch (%s) {\n", Name::tag);
                 {
                     auto guard = fmt.indent_guard();
-                    fmt.print("switch (%s) {\n", TAG_VAR_NAME);
-                    {
-                        auto guard = fmt.indent_guard();
-                        for (auto i : block.elements) {
-                            if (!i.value.empty() &&
-                                !no_deconstructor.count(i.value)) {
-                                fmt.print("case %d::%d:\n", TAG_CLASS_NAME,
-                                          i.key);
-                                {
-                                    auto guard = fmt.indent_guard();
-                                    fmt.print("%s.%s.~%s();\n", UNION_VAR_NAME,
-                                              i.key, i.value);
-                                    fmt.print("break;\n");
-                                }
+                    for (auto i : block.elements) {
+                        if (!i.value.empty()) {
+                            fmt.print("case %d::%d:\n", Name::Tag, i.key);
+                            {
+                                auto guard = fmt.indent_guard();
+                                fmt.print("%s.%s = std::move(other.%s.%s);\n",
+                                          Name::data, i.key, Name::data, i.key);
+                                fmt.print("break;\n");
                             }
                         }
-                        fmt.print("default:\n");
-                        fmt.print("    break;\n");
                     }
-                    fmt.print("}\n");
+                    fmt.print("default:\n");
+                    fmt.print("    break;\n");
                 }
                 fmt.print("}\n");
+                fmt.print("other.__del();\n");
+                fmt.print("return *this;\n");
+            }
+            fmt.print("}\n");
+            fmt.print("%s &%s::operator=(const %s &other) {\n", block.name,
+                      block.name, block.name);
+            {
+                auto guard = fmt.indent_guard();
+                fmt.print("if (this == &other) { return *this; }\n");
+                fmt.print("__del();\n");
+                fmt.print("%s = other.%s;\n", Name::tag, Name::tag);
+
+                fmt.print("switch (%s) {\n", Name::tag);
+                {
+                    auto guard = fmt.indent_guard();
+                    for (auto i : block.elements) {
+                        if (!i.value.empty()) {
+                            fmt.print("case %d::%d:\n", Name::Tag, i.key);
+                            {
+                                auto guard = fmt.indent_guard();
+                                fmt.print("%s.%s = other.%s.%s;\n", Name::data,
+                                          i.key, Name::data, i.key);
+                                fmt.print("break;\n");
+                            }
+                        }
+                    }
+                    fmt.print("default:\n");
+                    fmt.print("    break;\n");
+                }
+                fmt.print("}\n");
+                fmt.print("return *this;\n");
+            }
+            fmt.print("}\n");
+
+            // union constructor & deconstructor
+            if (use_union) {
+                fmt.print("%s::%s::%s() {}\n", block.name, Name::Data,
+                          Name::Data);
+                fmt.print("%s::%s::~%s() {}\n", block.name, Name::Data,
+                          Name::Data);
             }
             // static construct functions
             for (auto i : block.elements) {
@@ -130,18 +190,17 @@ std::string CodeGenerator::source(const std::string &baseName) {
                     fmt.print("const %s %s::%s() {\n", block.name, block.name,
                               i.key);
                     fmt.print("    %s res;\n", block.name);
-                    fmt.print("    res.%s = %s::%s;\n", TAG_VAR_NAME,
-                              TAG_CLASS_NAME, i.key);
+                    fmt.print("    res.%s = %s::%s;\n", Name::tag, Name::Tag,
+                              i.key);
                     fmt.print("    return res;\n");
                     fmt.print("}\n");
                 } else {
                     fmt.print("const %s %s::%s(%s value) {\n", block.name,
                               block.name, i.key, i.value);
                     fmt.print("    %s res;\n", block.name);
-                    fmt.print("    res.%s = %s::%s;\n", TAG_VAR_NAME,
-                              TAG_CLASS_NAME, i.key);
-                    fmt.print("    res.%s.%s = value;\n", UNION_VAR_NAME,
+                    fmt.print("    res.%s = %s::%s;\n", Name::tag, Name::Tag,
                               i.key);
+                    fmt.print("    res.%s.%s = value;\n", Name::data, i.key);
                     fmt.print("    return res;\n");
                     fmt.print("}\n");
                 }
@@ -150,16 +209,42 @@ std::string CodeGenerator::source(const std::string &baseName) {
             if (!use_union) {
                 fmt.print("bool %s::operator==(%s other) const {\n", block.name,
                           block.name);
-                fmt.print("    return %s == other.%s;\n", TAG_VAR_NAME,
-                          TAG_VAR_NAME);
+                fmt.print("    return %s == other.%s;\n", Name::tag, Name::tag);
                 fmt.print("}\n");
                 fmt.print("bool %s::operator!=(%s other) const {\n", block.name,
                           block.name);
-                fmt.print("    return %s != other.%s;\n", TAG_VAR_NAME,
-                          TAG_VAR_NAME);
+                fmt.print("    return %s != other.%s;\n", Name::tag, Name::tag);
                 fmt.print("}\n");
             }
+            // delete
+            fmt.print("void %s::__del() {\n", block.name);
+            {
+                auto guard = fmt.indent_guard();
+                fmt.print("switch (%s) {\n", Name::tag);
+                {
+                    auto guard = fmt.indent_guard();
+                    for (auto i : block.elements) {
+                        if (!i.value.empty() &&
+                            !no_deconstructor.count(i.value)) {
+                            fmt.print("case %d::%d:\n", Name::Tag, i.key);
+                            {
+                                auto guard = fmt.indent_guard();
+                                fmt.print("%s.%s.~%s();\n", Name::data, i.key,
+                                          i.value);
+                                fmt.print("break;\n");
+                            }
+                        }
+                    }
+                    fmt.print("default:\n");
+                    fmt.print("    break;\n");
+                }
+                fmt.print("}\n");
+                fmt.print("%s = %s::%s;\n", Name::tag, Name::Tag,
+                          Name::undef_tag);
+            }
+            fmt.print("}\n");
         } else if (block.type == BlockType::Class) {
+            std::vector<int> a;
         }
     }
     return fmt.recv.data;

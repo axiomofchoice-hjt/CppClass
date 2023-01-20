@@ -8,6 +8,7 @@
 int main() {
     try {
         Compiler::Compile("../def/Def.txt", "../def/");
+        puts("ok");
     } catch (const char *error) {
         printf("error: %s\n", error);
     }
