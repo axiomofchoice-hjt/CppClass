@@ -5,9 +5,13 @@
 
 #include "Compiler.h"
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc != 3) {
+        printf("usage: %s [source file] [target dir]\n", argv[0]);
+        return 0;
+    }
     try {
-        Compiler::Compile("../def/Def.txt", "../def/");
+        Compiler::Compile(argv[1], argv[2]);
         puts("ok");
     } catch (const char *error) {
         printf("error: %s\n", error);

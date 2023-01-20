@@ -4,6 +4,9 @@ File::File(const std::string &path) : path(path) {}
 
 std::string File::read() const {
     FILE *f = fopen(path.c_str(), "r");
+    if (f == nullptr) {
+        throw "read file failed";
+    }
     std::string res;
     while (true) {
         char c = fgetc(f);
@@ -18,6 +21,9 @@ std::string File::read() const {
 
 void File::write(const std::string &content) const {
     FILE *f = fopen(path.c_str(), "w");
+    if (f == nullptr) {
+        throw "write file failed";
+    }
     fprintf(f, "%s", content.c_str());
     fclose(f);
 }

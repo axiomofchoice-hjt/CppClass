@@ -7,7 +7,7 @@ const char *find_placeholder(const char *s) {
             return s;
         }
     }
-    throw "error: in format, `%s` not found";
+    throw "placeholder not found";
 }
 
 class Recv {

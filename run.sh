@@ -1,2 +1,2 @@
 cd build
-cmake .. && make && ./ObjDebug
+cmake .. && make && ./CppClass ../test/Def.txt ../test

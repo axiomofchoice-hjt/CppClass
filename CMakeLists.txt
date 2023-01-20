@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-project ("ObjDebug")
+project ("CppClass")
 
 aux_source_directory(. DIR_SRCS)
 set(THREADS_PREFER_PTHREAD_FLAG ON)

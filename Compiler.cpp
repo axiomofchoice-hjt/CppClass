@@ -23,7 +23,7 @@ void Compile(const std::string &input, std::string output) {
     if (output.back() != '/' && output.back() != '\\') {
         output.push_back('/');
     }
-    
+
     File(output + input_file.baseName() + ".h").write(gen.header());
     File(output + input_file.baseName() + ".cpp")
         .write(gen.source(input_file.baseName()));
