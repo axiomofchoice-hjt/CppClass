@@ -3,6 +3,8 @@
 
 #include <cstddef>
 #include <utility>
+#include <vector>
+#include <cstdint>
 
 #define This static_cast<Derived *>(this)
 #define CThis static_cast<const Derived *>(this)
@@ -30,17 +32,13 @@ class SimpleEnum {
         return *This;
     }
     void __del() { This->__tag = Derived::__Tag::__UNDEF; }
-    friend bool operator==(const Derived &a, const Derived &b) {
-        return a.__tag == b.__tag;
+    bool operator==(const Derived &b) const { return CThis->__tag == b.__tag; }
+    bool operator!=(const Derived &b) const { return CThis->__tag != b.__tag; }
+    bool operator==(std::nullptr_t b) const {
+        return CThis->__tag == Derived::__Tag::__UNDEF;
     }
-    friend bool operator!=(const Derived &a, const Derived &b) {
-        return a.__tag != b.__tag;
-    }
-    friend bool operator==(const Derived &a, std::nullptr_t b) {
-        return a.__tag == Derived::__Tag::__UNDEF;
-    }
-    friend bool operator!=(const Derived &a, std::nullptr_t b) {
-        return a.__tag != Derived::__Tag::__UNDEF;
+    bool operator!=(std::nullptr_t b) const {
+        return CThis->__tag != Derived::__Tag::__UNDEF;
     }
 };
 template <class Derived>
@@ -70,13 +68,24 @@ class ComplexEnum {
         This->__data.__del(This->__tag);
         This->__tag = Derived::__Tag::__UNDEF;
     }
-    friend bool operator==(const Derived &a, std::nullptr_t b) {
-        return a.__tag == Derived::__Tag::__UNDEF;
+    bool operator==(std::nullptr_t b) const {
+        return CThis->__tag == Derived::__Tag::__UNDEF;
     }
-    friend bool operator!=(const Derived &a, std::nullptr_t b) {
-        return a.__tag != Derived::__Tag::__UNDEF;
+    bool operator!=(std::nullptr_t b) const {
+        return CThis->__tag != Derived::__Tag::__UNDEF;
     }
 };
+
+using Bytes = std::vector<uint8_t>;
+
+void __appendBinary(Bytes &res, uint64_t data);
+
+template <typename T>
+Bytes toBinary(const T &__data) {
+    Bytes __res;
+    __appendBinary(__res, __data);
+    return __res;
+}
 }  // namespace CppClass
 
 #undef CThis

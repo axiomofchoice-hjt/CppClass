@@ -55,4 +55,8 @@ class Fmt {
         recv.append(std::string(indent - 1, ' '));
         recv.append("public:\n");
     }
+    void print_private() {
+        recv.append(std::string(indent - 1, ' '));
+        recv.append("private:\n");
+    }
 };

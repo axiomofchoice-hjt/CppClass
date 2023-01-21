@@ -12,28 +12,21 @@ CodeGenerator::CodeGenerator(const std::vector<Block> &blocks)
 
 std::string CodeGenerator::header() {
     Fmt fmt;
-    fmt.print("#pragma once\n");
-    fmt.print("#include \"../CppClass.h\"\n");
+    fmt.print("#pragma once\n\n");
+    fmt.print("#include <string>\n\n");
+    fmt.print("#include \"../CppClass.h\"\n\n");
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
             bool use_union = block.isComplexEnum();
+            fmt.print("class %s;\n", block.name);
+            fmt.print("namespace CppClass {\n");
+            fmt.print("void __appendBinary(Bytes &, const %s &);\n", block.name);
+            fmt.print("}\n");
             fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
                       use_union ? "ComplexEnum" : "SimpleEnum", block.name);
             {
                 auto guard = fmt.indent_guard();
-                fmt.print_public();
-                // constructor
-                fmt.print("%s();\n", block.name);
-                fmt.print("%s(%s &&);\n", block.name, block.name);
-                fmt.print("%s(const %s &);\n", block.name, block.name);
-                // deconstructor
-                fmt.print("~%s();\n", block.name);
-                // assign operator
-                fmt.print("%s &operator=(%s &&);\n", block.name, block.name);
-                fmt.print("%s &operator=(const %s &);\n", block.name,
-                          block.name);
-                fmt.print("%s &operator=(std::nullptr_t);\n", block.name);
-
+                fmt.print_private();
                 // enum class
                 fmt.print("enum class __Tag {\n");
                 {
@@ -67,6 +60,19 @@ std::string CodeGenerator::header() {
                     fmt.print("};\n");
                     fmt.print("__Data __data;\n");
                 }
+                fmt.print_public();
+                // constructor
+                fmt.print("%s();\n", block.name);
+                fmt.print("%s(%s &&);\n", block.name, block.name);
+                fmt.print("%s(const %s &);\n", block.name, block.name);
+                // deconstructor
+                fmt.print("~%s();\n", block.name);
+                // assign operator
+                fmt.print("%s &operator=(%s &&);\n", block.name, block.name);
+                fmt.print("%s &operator=(const %s &);\n", block.name,
+                          block.name);
+                fmt.print("%s &operator=(std::nullptr_t);\n", block.name);
+
                 // static construct functions
                 for (auto i : block.elements) {
                     fmt.print("static const %s %s(%s);\n", block.name, i.key,
@@ -83,6 +89,14 @@ std::string CodeGenerator::header() {
                                   i.key);
                     }
                 }
+                // to binary
+                fmt.print(
+                    "friend void CppClass::__appendBinary(CppClass::Bytes &, "
+                    "const %s &);\n",
+                    block.name);
+                // friend
+                fmt.print("friend CppClass::%s<%s>;\n",
+                          use_union ? "ComplexEnum" : "SimpleEnum", block.name);
             }
             fmt.print("};\n");
         } else if (block.type == BlockType::Class) {
@@ -254,6 +268,38 @@ std::string CodeGenerator::source(const std::string &baseName) {
                         i.value, block.name, i.key, i.key);
                 }
             }
+            // to binary
+            fmt.print("namespace CppClass {\n");
+            fmt.print(
+                "void __appendBinary(Bytes &__res, const %s &__object) {\n",
+                block.name);
+            {
+                auto guard = fmt.indent_guard();
+                fmt.print(
+                    "__appendBinary(__res, uint32_t(__object.__tag));\n");
+                fmt.print("switch (__object.__tag) {\n");
+                {
+                    auto guard = fmt.indent_guard();
+                    for (auto i : block.elements) {
+                        if (!i.value.empty()) {
+                            fmt.print("case %s::__Tag::%s:\n", block.name,
+                                      i.key);
+                            {
+                                auto guard = fmt.indent_guard();
+                                fmt.print(
+                                    "__appendBinary(__res, __object.__data.%s);\n",
+                                    i.key);
+                                fmt.print("break;\n");
+                            }
+                        }
+                    }
+                    fmt.print("default:\n");
+                    fmt.print("    break;\n");
+                }
+                fmt.print("}\n");
+            }
+            fmt.print("}\n");
+            fmt.print("}\n");
         } else if (block.type == BlockType::Class) {
             std::vector<int> a;
         }
