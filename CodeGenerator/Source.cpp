@@ -226,8 +226,7 @@ std::string CodeGenerator::source(const std::string &baseName) {
                       block.name);
             {
                 auto guard = fmt.indent_guard();
-                fmt.print("__res += \"{\\\"type\\\":\\\"%s\\\",\";\n", block.name);
-                fmt.print("__res += \"\\\"which\\\":\";\n");
+                fmt.print("__res += \"{\\\"%s.\";\n", block.name);
                 fmt.print("switch (__object.__tag) {\n");
                 {
                     auto guard = fmt.indent_guard();
@@ -235,9 +234,10 @@ std::string CodeGenerator::source(const std::string &baseName) {
                         fmt.print("case %s::__Tag::%s:\n", block.name, i.key);
                         {
                             auto guard = fmt.indent_guard();
-                            fmt.print("__res += \"\\\"%s\\\"\";\n", i.key);
-                            if (!i.value.empty()) {
-                                fmt.print("__res += \",\\\"data\\\":\";\n");
+                            fmt.print("__res += \"%s\\\":\";\n", i.key);
+                            if (i.value.empty()) {
+                                fmt.print("__res += \"null\";\n");
+                            } else {
                                 fmt.print(
                                     "__toJson(__res, __object.__data.%s);\n",
                                     i.key);
@@ -246,7 +246,7 @@ std::string CodeGenerator::source(const std::string &baseName) {
                         fmt.print("break;\n");
                     }
                     fmt.print("default:\n");
-                    fmt.print("    __res += \"null\";\n");
+                    fmt.print("    __res += \"#\\\":null\";\n");
                     fmt.print("    break;\n");
                 }
                 fmt.print("}\n");
@@ -257,29 +257,25 @@ std::string CodeGenerator::source(const std::string &baseName) {
                       block.name);
             {
                 auto guard = fmt.indent_guard();
-                fmt.print("uint32_t __tmp;\n");
-                fmt.print("__fromJson(__it, __tmp);\n");
-                fmt.print("__object.__tag = (%s::__Tag)__tmp;\n", block.name);
-                fmt.print("switch (__object.__tag) {\n");
-                {
-                    auto guard = fmt.indent_guard();
-                    for (auto i : block.elements) {
-                        if (!i.value.empty()) {
-                            fmt.print("case %s::__Tag::%s:\n", block.name,
-                                      i.key);
-                            {
-                                auto guard = fmt.indent_guard();
-                                fmt.print(
-                                    "__fromJson(__it, __object.__data.%s);\n",
-                                    i.key);
-                                fmt.print("break;\n");
-                            }
-                        }
+                fmt.print("std::string __tmp = __jsonEnumGet(__it);\n");
+                fmt.print("__object.__del();\n");
+                fmt.print("if (__tmp == \"#\") {\n");
+                fmt.print("    __it += 4;\n");
+                fmt.print("}");
+                for (auto i : block.elements) {
+                    fmt.print_without_indent(" else if (__tmp == \"%s\") {\n", i.key);
+                    fmt.print("    __object.__tag = %s::__Tag::%s;\n",
+                              block.name, i.key);
+                    if (i.value.empty()) {
+                        fmt.print("    __it += 4;\n");
+                    } else {
+                        fmt.print("    __fromJson(__it, __object.__data.%s);\n",
+                                  i.key);
                     }
-                    fmt.print("default:\n");
-                    fmt.print("    break;\n");
+                    fmt.print("}");
                 }
-                fmt.print("}\n");
+                fmt.print("\n");
+                fmt.print("++__it;\n");
             }
             fmt.print("}\n");
             fmt.print("}\n");

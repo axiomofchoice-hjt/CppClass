@@ -30,6 +30,11 @@ class Fmt {
     Fmt() : recv(), indent() {}
 
     template <class... Args>
+    void print_without_indent(const char *s, Args... args) {
+        recv.append_format(s, args...);
+    }
+
+    template <class... Args>
     void print(const char *s, Args... args) {
         recv.append(std::string(indent, ' '));
         recv.append_format(s, args...);

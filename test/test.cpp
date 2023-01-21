@@ -56,8 +56,17 @@ int main() {
     assert(r2.is_Err());
     assert(r2.get_Err() == 233);
 
+    printf("%s\n", CppClass::toJson(Result()).c_str());
     printf("%s\n", CppClass::toJson(Result::Ok()).c_str());
     printf("%s\n", CppClass::toJson(Result::Err(233)).c_str());
+
+    std::string str = R"eof({"Result.#":null})eof";
+    assert(CppClass::fromJson<Result>(str) == nullptr);
+    str = R"eof({"Result.Ok":null})eof";
+    assert(CppClass::fromJson<Result>(str).is_Ok());
+    str = R"eof({"Result.Err":233})eof";
+    assert(CppClass::fromJson<Result>(str).is_Err());
+    assert(CppClass::fromJson<Result>(str).get_Err() == 233);
 
     return 0;
 }

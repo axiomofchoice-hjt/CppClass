@@ -30,6 +30,9 @@ T fromBinary(const Bytes &__bin) {
     Iter __tmp_iter = __bin.cbegin();
     void __fromBinary(Iter &, T &);
     __fromBinary(__tmp_iter, __res);
+    if (__tmp_iter != __bin.cend()) {
+        throw "fromBinary fail";
+    }
     return __res;
 }
 }  // namespace Bin

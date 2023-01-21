@@ -27,5 +27,18 @@ void __fromJson(Iter &it, int64_t &data) {
     sscanf(&*it, "%ld%n", &data, &len);
     it += len;
 }
+std::string __jsonEnumGet(Iter &it) {
+    while (*it != '.') {
+        ++it;
+    }
+    ++it;
+    auto l = it;
+    while (*it != '"') {
+        ++it;
+    }
+    auto r = it;
+    it += 2;
+    return std::string(l, r);
+}
 }  // namespace Json
 }  // namespace CppClass
