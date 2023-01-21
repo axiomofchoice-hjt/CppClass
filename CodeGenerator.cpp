@@ -21,6 +21,7 @@ std::string CodeGenerator::header() {
             fmt.print("class %s;\n", block.name);
             fmt.print("namespace CppClass {\n");
             fmt.print("void __toBinary(Bytes &, const %s &);\n", block.name);
+            fmt.print("void __fromBinary(Iter &, %s &);\n", block.name);
             fmt.print("}\n");
             fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
                       use_union ? "ComplexEnum" : "SimpleEnum", block.name);
@@ -93,6 +94,10 @@ std::string CodeGenerator::header() {
                 fmt.print(
                     "friend void CppClass::__toBinary(CppClass::Bytes &, "
                     "const %s &);\n",
+                    block.name);
+                fmt.print(
+                    "friend void CppClass::__fromBinary(CppClass::Iter &, "
+                    "%s &);\n",
                     block.name);
                 // friend
                 fmt.print("friend CppClass::%s<%s>;\n",
@@ -270,13 +275,11 @@ std::string CodeGenerator::source(const std::string &baseName) {
             }
             // to binary
             fmt.print("namespace CppClass {\n");
-            fmt.print(
-                "void __toBinary(Bytes &__res, const %s &__object) {\n",
-                block.name);
+            fmt.print("void __toBinary(Bytes &__res, const %s &__object) {\n",
+                      block.name);
             {
                 auto guard = fmt.indent_guard();
-                fmt.print(
-                    "__toBinary(__res, uint32_t(__object.__tag));\n");
+                fmt.print("__toBinary(__res, uint32_t(__object.__tag));\n");
                 fmt.print("switch (__object.__tag) {\n");
                 {
                     auto guard = fmt.indent_guard();
@@ -288,6 +291,35 @@ std::string CodeGenerator::source(const std::string &baseName) {
                                 auto guard = fmt.indent_guard();
                                 fmt.print(
                                     "__toBinary(__res, __object.__data.%s);\n",
+                                    i.key);
+                                fmt.print("break;\n");
+                            }
+                        }
+                    }
+                    fmt.print("default:\n");
+                    fmt.print("    break;\n");
+                }
+                fmt.print("}\n");
+            }
+            fmt.print("}\n");
+            fmt.print("void __fromBinary(Iter &__it, %s &__object) {\n",
+                      block.name);
+            {
+                auto guard = fmt.indent_guard();
+                fmt.print("uint32_t __tmp;\n");
+                fmt.print("__fromBinary(__it, __tmp);\n");
+                fmt.print("__object.__tag = (%s::__Tag)__tmp;\n", block.name);
+                fmt.print("switch (__object.__tag) {\n");
+                {
+                    auto guard = fmt.indent_guard();
+                    for (auto i : block.elements) {
+                        if (!i.value.empty()) {
+                            fmt.print("case %s::__Tag::%s:\n", block.name,
+                                      i.key);
+                            {
+                                auto guard = fmt.indent_guard();
+                                fmt.print(
+                                    "__fromBinary(__it, __object.__data.%s);\n",
                                     i.key);
                                 fmt.print("break;\n");
                             }

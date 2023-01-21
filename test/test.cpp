@@ -47,5 +47,14 @@ int main() {
     assert(r.is_Err());
     assert(r.get_Err() == 233);
 
+    auto serial = CppClass::toBinary(r);
+    for (auto i : serial) {
+        printf("%u ", i);
+    }
+    puts("");
+    auto r2 = CppClass::fromBinary<Result>(serial);
+    assert(r2.is_Err());
+    assert(r2.get_Err() == 233);
+
     return 0;
 }

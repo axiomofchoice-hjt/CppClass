@@ -77,6 +77,7 @@ class ComplexEnum {
 };
 
 using Bytes = std::vector<uint8_t>;
+using Iter = Bytes::const_iterator;
 
 void __toBinary(Bytes &res, uint32_t data);
 void __toBinary(Bytes &res, uint64_t data);
@@ -90,15 +91,16 @@ Bytes toBinary(const T &__data) {
     return __res;
 }
 
-void __fromBinary(Bytes::iterator &it, uint32_t &data);
-void __fromBinary(Bytes::iterator &it, uint64_t &data);
-void __fromBinary(Bytes::iterator &it, int32_t &data);
-void __fromBinary(Bytes::iterator &it, int64_t &data);
+void __fromBinary(Iter &it, uint32_t &data);
+void __fromBinary(Iter &it, uint64_t &data);
+void __fromBinary(Iter &it, int32_t &data);
+void __fromBinary(Iter &it, int64_t &data);
 
 template <typename T>
 T fromBinary(const Bytes &__bin) {
     T __res;
-    __fromBinary(__bin.begin(), __res);
+    Iter __tmp_iter = __bin.cbegin();
+    __fromBinary(__tmp_iter, __res);
     return __res;
 }
 }  // namespace CppClass
