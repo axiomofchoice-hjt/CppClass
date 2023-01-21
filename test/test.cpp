@@ -12,22 +12,40 @@
     } while (false)
 
 int main() {
-    assert(Message::Start() != Message::Reload());
-    assert(Message::Start() == Message::Start());
-    assert(!(Message::Start() != Message::Start()));
-    printf("sizeof SEnum = %zu\n", sizeof(Message));
+    assert(Calc::Add() != Calc::Sub());
+    assert(Calc::Add() == Calc::Add());
+    assert(!(Calc::Add() != Calc::Add()));
+    printf("sizeof SEnum = %zu\n", sizeof(Calc));
     printf("sizeof CEnum = %zu\n", sizeof(Result));
-    Message a;
-    assert(a.__tag == Message::__Tag::__UNDEF);
-    a = Message::Start();
-    assert(a == Message::Start());
-    Message b = Message::Reload();
+
+    Calc a;
+    assert(a == nullptr);
+    assert(!(a != nullptr));
+    assert(!a.is_Add());
+    assert(!a.is_Sub());
+
+    a = Calc::Add();
+    assert(a != nullptr);
+    assert(!(a == nullptr));
+    assert(a.is_Add());
+    assert(!a.is_Sub());
+
+    Calc b = Calc::Sub();
     a = b;
-    assert(a == Message::Reload());
-    assert(b == Message::Reload());
-    a = Message::Start();
+    assert(a.is_Sub());
+    assert(b.is_Sub());
+
+    a = Calc::Add();
     a = std::move(b);
-    assert(a == Message::Reload());
-    assert(b == Message());
+    assert(a.is_Sub());
+    assert(b == nullptr);
+
+    auto r = Result::Ok();
+    assert(r != nullptr);
+    assert(r.is_Ok());
+    r = Result::Err(233);
+    assert(r.is_Err());
+    assert(r.get_Err() == 233);
+
     return 0;
 }

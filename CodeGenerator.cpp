@@ -17,7 +17,7 @@ std::string CodeGenerator::header() {
     for (auto block : blocks) {
         if (block.type == BlockType::Enum) {
             bool use_union = block.isComplexEnum();
-            fmt.print("class %s: public CppClass::%s<%s> {\n", block.name,
+            fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
                       use_union ? "ComplexEnum" : "SimpleEnum", block.name);
             {
                 auto guard = fmt.indent_guard();
@@ -32,6 +32,7 @@ std::string CodeGenerator::header() {
                 fmt.print("%s &operator=(%s &&);\n", block.name, block.name);
                 fmt.print("%s &operator=(const %s &);\n", block.name,
                           block.name);
+                fmt.print("%s &operator=(std::nullptr_t);\n", block.name);
 
                 // enum class
                 fmt.print("enum class __Tag {\n");
@@ -70,6 +71,17 @@ std::string CodeGenerator::header() {
                 for (auto i : block.elements) {
                     fmt.print("static const %s %s(%s);\n", block.name, i.key,
                               i.value);
+                }
+                // is
+                for (auto i : block.elements) {
+                    fmt.print("bool is_%s() const;\n", i.key);
+                }
+                // get
+                for (auto i : block.elements) {
+                    if (!i.value.empty()) {
+                        fmt.print("const %s &get_%s() const;\n", i.value,
+                                  i.key);
+                    }
                 }
             }
             fmt.print("};\n");
@@ -110,19 +122,15 @@ std::string CodeGenerator::source(const std::string &baseName) {
             // assign operator
             fmt.print("%s &%s::operator=(%s &&other) {\n", block.name,
                       block.name, block.name);
-            {
-                auto guard = fmt.indent_guard();
-                fmt.print("__assign(std::move(other));\n");
-                fmt.print("return *this;\n");
-            }
+            fmt.print("    return __assign(std::move(other));\n");
             fmt.print("}\n");
             fmt.print("%s &%s::operator=(const %s &other) {\n", block.name,
                       block.name, block.name);
-            {
-                auto guard = fmt.indent_guard();
-                fmt.print("__assign(other);\n");
-                fmt.print("return *this;\n");
-            }
+            fmt.print("    return __assign(other);\n");
+            fmt.print("}\n");
+            fmt.print("%s &%s::operator=(std::nullptr_t) {\n", block.name,
+                      block.name);
+            fmt.print("    return __assign(nullptr);\n");
             fmt.print("}\n");
 
             // union
@@ -187,7 +195,8 @@ std::string CodeGenerator::source(const std::string &baseName) {
                 }
                 fmt.print("}\n");
 
-                fmt.print("void %s::__Data::__del(__Tag __tag) {\n", block.name);
+                fmt.print("void %s::__Data::__del(__Tag __tag) {\n",
+                          block.name);
                 {
                     auto guard = fmt.indent_guard();
                     fmt.print("switch (__tag) {\n");
@@ -229,6 +238,20 @@ std::string CodeGenerator::source(const std::string &baseName) {
                     fmt.print("    res.__data.%s = value;\n", i.key);
                     fmt.print("    return res;\n");
                     fmt.print("}\n");
+                }
+            }
+            // is
+            for (auto i : block.elements) {
+                fmt.print("bool %s::is_%s() const {\n", block.name, i.key);
+                fmt.print("    return __tag == __Tag::%s;\n", i.key);
+                fmt.print("}\n");
+            }
+            // get
+            for (auto i : block.elements) {
+                if (!i.value.empty()) {
+                    fmt.print(
+                        "const %s &%s::get_%s() const { return __data.%s; };\n",
+                        i.value, block.name, i.key, i.key);
                 }
             }
         } else if (block.type == BlockType::Class) {

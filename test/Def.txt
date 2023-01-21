@@ -1,16 +1,17 @@
-enum Message {
-    Start,
-    Stop,
-    Reload
+enum Calc {
+    Add,
+    Sub,
+    Mul,
+    Div
 }
 
 enum Result {
     Ok,
-    Err(Message)
+    Err(int)
 }
 
 class cl {
     a: int,
-    b: Message,
+    b: Calc,
     c: Result
 }

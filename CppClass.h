@@ -1,60 +1,85 @@
 #ifndef __CPP_CLASS_H
 #define __CPP_CLASS_H
 
+#include <cstddef>
 #include <utility>
 
-#define This static_cast<Derive *>(this)
-#define CThis static_cast<const Derive *>(this)
+#define This static_cast<Derived *>(this)
+#define CThis static_cast<const Derived *>(this)
 
 namespace CppClass {
-template <class Derive>
+template <class Derived>
 class SimpleEnum {
    public:
-    void __assign(Derive &&other) {
+    Derived &__assign(Derived &&other) {
         This->__del();
         This->__tag = other.__tag;
         other.__del();
+        return *This;
     }
-    void __assign(const Derive &other) {
+    Derived &__assign(const Derived &other) {
         if (This == &other) {
-            return;
+            return *This;
         }
         This->__del();
         This->__tag = other.__tag;
+        return *This;
     }
-    void __del() { This->__tag = Derive::__Tag::__UNDEF; }
-    bool operator==(const Derive &other) const {
-        return CThis->__tag == other.__tag;
+    Derived &__assign(std::nullptr_t) {
+        This->__del();
+        return *This;
     }
-    bool operator!=(const Derive &other) const {
-        return CThis->__tag != other.__tag;
+    void __del() { This->__tag = Derived::__Tag::__UNDEF; }
+    friend bool operator==(const Derived &a, const Derived &b) {
+        return a.__tag == b.__tag;
+    }
+    friend bool operator!=(const Derived &a, const Derived &b) {
+        return a.__tag != b.__tag;
+    }
+    friend bool operator==(const Derived &a, std::nullptr_t b) {
+        return a.__tag == Derived::__Tag::__UNDEF;
+    }
+    friend bool operator!=(const Derived &a, std::nullptr_t b) {
+        return a.__tag != Derived::__Tag::__UNDEF;
     }
 };
-template <class Derive>
+template <class Derived>
 class ComplexEnum {
    public:
-    void __assign(Derive &&other) {
+    Derived &__assign(Derived &&other) {
         This->__del();
         This->__tag = other.__tag;
         This->__data.__assign(This->__tag, std::move(other.__data));
         other.__del();
+        return *This;
     }
-    void __assign(const Derive &other) {
+    Derived &__assign(const Derived &other) {
         if (This == &other) {
-            return;
+            return *This;
         }
         This->__del();
         This->__tag = other.__tag;
         This->__data.__assign(This->__tag, other.__data);
+        return *This;
+    }
+    Derived &__assign(std::nullptr_t) {
+        This->__del();
+        return *This;
     }
     void __del() {
         This->__data.__del(This->__tag);
-        This->__tag = Derive::__Tag::__UNDEF;
+        This->__tag = Derived::__Tag::__UNDEF;
+    }
+    friend bool operator==(const Derived &a, std::nullptr_t b) {
+        return a.__tag == Derived::__Tag::__UNDEF;
+    }
+    friend bool operator!=(const Derived &a, std::nullptr_t b) {
+        return a.__tag != Derived::__Tag::__UNDEF;
     }
 };
 }  // namespace CppClass
 
-#undef This
 #undef CThis
+#undef This
 
 #endif
