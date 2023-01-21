@@ -1,10 +1,8 @@
 #ifndef __CPP_CLASS_H
 #define __CPP_CLASS_H
 
-#include <cstddef>
-#include <cstdint>
-#include <utility>
-#include <vector>
+#include "CppClass/Bin.h"
+#include "CppClass/Json.h"
 
 #define This static_cast<Derived *>(this)
 #define CThis static_cast<const Derived *>(this)
@@ -75,34 +73,6 @@ class ComplexEnum {
         return CThis->__tag != Derived::__Tag::__UNDEF;
     }
 };
-
-using Bytes = std::vector<uint8_t>;
-using Iter = Bytes::const_iterator;
-
-void __toBinary(Bytes &res, uint32_t data);
-void __toBinary(Bytes &res, uint64_t data);
-void __toBinary(Bytes &res, int32_t data);
-void __toBinary(Bytes &res, int64_t data);
-
-template <typename T>
-Bytes toBinary(const T &__data) {
-    Bytes __res;
-    __toBinary(__res, __data);
-    return __res;
-}
-
-void __fromBinary(Iter &it, uint32_t &data);
-void __fromBinary(Iter &it, uint64_t &data);
-void __fromBinary(Iter &it, int32_t &data);
-void __fromBinary(Iter &it, int64_t &data);
-
-template <typename T>
-T fromBinary(const Bytes &__bin) {
-    T __res;
-    Iter __tmp_iter = __bin.cbegin();
-    __fromBinary(__tmp_iter, __res);
-    return __res;
-}
 }  // namespace CppClass
 
 #undef CThis

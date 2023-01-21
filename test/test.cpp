@@ -56,5 +56,8 @@ int main() {
     assert(r2.is_Err());
     assert(r2.get_Err() == 233);
 
+    printf("%s\n", CppClass::toJson(Result::Ok()).c_str());
+    printf("%s\n", CppClass::toJson(Result::Err(233)).c_str());
+
     return 0;
 }

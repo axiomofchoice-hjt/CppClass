@@ -3,6 +3,7 @@
 project ("CppClass")
 
 aux_source_directory(. DIR_SRCS)
+aux_source_directory(CodeGenerator DIR_SRCS)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 

@@ -1,19 +1,23 @@
-#include "CppClass.h"
-#include<cstdio>
+#include "Bin.h"
 
 namespace CppClass {
-void __toBinary(Bytes &res, uint32_t data) {
+namespace Bin {
+void __toBinary(Bytes &res, const uint32_t &data) {
     res.push_back(data & 0xff);
     res.push_back((data >> 8) & 0xff);
     res.push_back((data >> 16) & 0xff);
     res.push_back((data >> 24) & 0xff);
 }
-void __toBinary(Bytes &res, uint64_t data) {
+void __toBinary(Bytes &res, const uint64_t &data) {
     __toBinary(res, uint32_t(data & 0xffffffff));
     __toBinary(res, uint32_t((data >> 32) & 0xffffffff));
 }
-void __toBinary(Bytes &res, int32_t data) { __toBinary(res, uint32_t(data)); }
-void __toBinary(Bytes &res, int64_t data) { __toBinary(res, uint64_t(data)); }
+void __toBinary(Bytes &res, const int32_t &data) {
+    __toBinary(res, uint32_t(data));
+}
+void __toBinary(Bytes &res, const int64_t &data) {
+    __toBinary(res, uint64_t(data));
+}
 
 void __fromBinary(Iter &it, uint32_t &data) {
     data = 0;
@@ -41,4 +45,5 @@ void __fromBinary(Iter &it, int64_t &data) {
     __fromBinary(it, tmp);
     data = tmp;
 }
+}  // namespace Bin
 }  // namespace CppClass

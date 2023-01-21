@@ -1,25 +1,18 @@
 #pragma once
 #include <string>
 
-const char *find_placeholder(const char *s) {
-    for (; *s != 0; s++) {
-        if (*s == '%' && (s[1] == 's' || s[1] == 'd')) {
-            return s;
-        }
-    }
-    throw "placeholder not found";
-}
+const char *find_placeholder(const char *s);
 
 class Recv {
    public:
     std::string data;
-    void append(const std::string &s) { data += s; }
-    void append(const char *s) { data += s; }
+    void append(const std::string &s);
+    void append(const char *s);
     template <class T>
     void append(const T &s) {
         data += std::to_string(s);
     }
-    void append_format(const char *s) { append(s); }
+    void append_format(const char *s);
 
     template <class T, class... Args>
     void append_format(const char *s, const T &arg, Args... rest) {

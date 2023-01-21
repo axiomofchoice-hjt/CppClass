@@ -1,6 +1,6 @@
 # CppClass
 
-一个类似 protobuf 的工具
+随手写的类似 protobuf 的工具
 
 ## 枚举类型
 
