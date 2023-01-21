@@ -20,7 +20,7 @@ std::string CodeGenerator::header() {
             bool use_union = block.isComplexEnum();
             fmt.print("class %s;\n", block.name);
             fmt.print("namespace CppClass {\n");
-            fmt.print("void __appendBinary(Bytes &, const %s &);\n", block.name);
+            fmt.print("void __toBinary(Bytes &, const %s &);\n", block.name);
             fmt.print("}\n");
             fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
                       use_union ? "ComplexEnum" : "SimpleEnum", block.name);
@@ -91,7 +91,7 @@ std::string CodeGenerator::header() {
                 }
                 // to binary
                 fmt.print(
-                    "friend void CppClass::__appendBinary(CppClass::Bytes &, "
+                    "friend void CppClass::__toBinary(CppClass::Bytes &, "
                     "const %s &);\n",
                     block.name);
                 // friend
@@ -271,12 +271,12 @@ std::string CodeGenerator::source(const std::string &baseName) {
             // to binary
             fmt.print("namespace CppClass {\n");
             fmt.print(
-                "void __appendBinary(Bytes &__res, const %s &__object) {\n",
+                "void __toBinary(Bytes &__res, const %s &__object) {\n",
                 block.name);
             {
                 auto guard = fmt.indent_guard();
                 fmt.print(
-                    "__appendBinary(__res, uint32_t(__object.__tag));\n");
+                    "__toBinary(__res, uint32_t(__object.__tag));\n");
                 fmt.print("switch (__object.__tag) {\n");
                 {
                     auto guard = fmt.indent_guard();
@@ -287,7 +287,7 @@ std::string CodeGenerator::source(const std::string &baseName) {
                             {
                                 auto guard = fmt.indent_guard();
                                 fmt.print(
-                                    "__appendBinary(__res, __object.__data.%s);\n",
+                                    "__toBinary(__res, __object.__data.%s);\n",
                                     i.key);
                                 fmt.print("break;\n");
                             }

@@ -2,9 +2,9 @@
 #define __CPP_CLASS_H
 
 #include <cstddef>
+#include <cstdint>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 #define This static_cast<Derived *>(this)
 #define CThis static_cast<const Derived *>(this)
@@ -78,12 +78,27 @@ class ComplexEnum {
 
 using Bytes = std::vector<uint8_t>;
 
-void __appendBinary(Bytes &res, uint64_t data);
+void __toBinary(Bytes &res, uint32_t data);
+void __toBinary(Bytes &res, uint64_t data);
+void __toBinary(Bytes &res, int32_t data);
+void __toBinary(Bytes &res, int64_t data);
 
 template <typename T>
 Bytes toBinary(const T &__data) {
     Bytes __res;
-    __appendBinary(__res, __data);
+    __toBinary(__res, __data);
+    return __res;
+}
+
+void __fromBinary(Bytes::iterator &it, uint32_t &data);
+void __fromBinary(Bytes::iterator &it, uint64_t &data);
+void __fromBinary(Bytes::iterator &it, int32_t &data);
+void __fromBinary(Bytes::iterator &it, int64_t &data);
+
+template <typename T>
+T fromBinary(const Bytes &__bin) {
+    T __res;
+    __fromBinary(__bin.begin(), __res);
     return __res;
 }
 }  // namespace CppClass
