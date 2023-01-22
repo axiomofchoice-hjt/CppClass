@@ -22,13 +22,16 @@ void __fromJson(Iter &it, uint32_t &data);
 void __fromJson(Iter &it, uint64_t &data);
 void __fromJson(Iter &it, int32_t &data);
 void __fromJson(Iter &it, int64_t &data);
-std::string __jsonEnumGet(Iter &it);
+void __jsonIgnoreSpace(Iter &it);
+char __jsonGetFirstChar(Iter &it);
+std::string __jsonGetFirstKey(Iter &it);
 template <typename T>
 T fromJson(const Str &__json) {
     T __res;
     Iter __tmp_iter = __json.cbegin();
     void __fromJson(Iter &, T &);
     __fromJson(__tmp_iter, __res);
+    __jsonIgnoreSpace(__tmp_iter);
     if (__tmp_iter != __json.cend()) {
         throw "fromJson fail";
     }

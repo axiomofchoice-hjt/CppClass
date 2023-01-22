@@ -2,10 +2,9 @@
 #include "../Fmt.h"
 
 namespace Compiler {
-void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
-    bool use_union = block.isComplexEnum();
+static void print_serialize_declare(Fmt &fmt, const Block &block) {
     fmt.print("class %s;\n", block.name);
-    fmt.print("namespace CppClass{\n");
+    fmt.print("namespace CppClass {\n");
     fmt.print("namespace Bin {\n");
     fmt.print("void __toBinary(Bytes &, const %s &);\n", block.name);
     fmt.print("void __fromBinary(Iter &, %s &);\n", block.name);
@@ -15,6 +14,31 @@ void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
     fmt.print("void __fromJson(Iter &, %s &);\n", block.name);
     fmt.print("}\n");
     fmt.print("}\n");
+}
+static void print_serialize_friend(Fmt &fmt, const Block &block) {
+    // to binary
+    fmt.print(
+        "friend void CppClass::Bin::__toBinary(CppClass::Bin::Bytes &, const "
+        "%s &);\n",
+        block.name);
+    fmt.print(
+        "friend void CppClass::Bin::__fromBinary(CppClass::Bin::Iter &, %s "
+        "&);\n",
+        block.name);
+    // to json
+    fmt.print(
+        "friend void CppClass::Json::__toJson(CppClass::Json::Str &, const %s "
+        "&);\n",
+        block.name);
+    fmt.print(
+        "friend void CppClass::Json::__fromJson(CppClass::Json::Iter &, %s "
+        "&);\n",
+        block.name);
+}
+
+void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
+    bool use_union = block.isComplexEnum();
+    print_serialize_declare(fmt, block);
     fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
               use_union ? "ComplexEnum" : "SimpleEnum", block.name);
     {
@@ -38,8 +62,8 @@ void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
                 auto guard = fmt.indent_guard();
                 fmt.print("__Data();\n");
                 fmt.print("~__Data();\n");
-                fmt.print("void __assign(__Tag tag, __Data &&other);\n");
-                fmt.print("void __assign(__Tag tag, const __Data &other);\n");
+                fmt.print("void __assign(__Tag, __Data &&);\n");
+                fmt.print("void __assign(__Tag, const __Data &);\n");
                 fmt.print("void __del(__Tag tag);\n");
                 fmt.print("struct {} __UNDEF;\n");
                 for (auto i : block.elements) {
@@ -78,29 +102,7 @@ void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
                 fmt.print("%s &get_%s();\n", i.value, i.key);
             }
         }
-        // to binary
-        fmt.print(
-            "friend void "
-            "CppClass::Bin::__toBinary(CppClass::"
-            "Bin::Bytes &, "
-            "const %s &);\n",
-            block.name);
-        fmt.print(
-            "friend void "
-            "CppClass::Bin::__fromBinary(CppClass::"
-            "Bin::Iter &, "
-            "%s &);\n",
-            block.name);
-        // to json
-        fmt.print(
-            "friend void CppClass::Json::__toJson(CppClass::Json::Str "
-            "&, const %s &);\n",
-            block.name);
-        fmt.print(
-            "friend void "
-            "CppClass::Json::__fromJson(CppClass::Json::Iter &, %s "
-            "&);\n",
-            block.name);
+        print_serialize_friend(fmt, block);
         // friend
         fmt.print("friend CppClass::%s<%s>;\n",
                   use_union ? "ComplexEnum" : "SimpleEnum", block.name);
@@ -109,14 +111,19 @@ void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
 }
 
 void CodeGenerator::__class_header(Fmt &fmt, const Block &block) {
+    print_serialize_declare(fmt, block);
     fmt.print("class %s {\n", block.name);
-    fmt.print("   public:\n");
-    for (auto i : block.elements) {
-        if (i.isList) {
-            fmt.print("    std::vector<%s> %s;\n", i.value, i.key);
-        } else {
-            fmt.print("    %s %s;\n", i.value, i.key);
+    {
+        auto guard = fmt.indent_guard();
+        fmt.print_public();
+        for (auto i : block.elements) {
+            if (i.isList) {
+                fmt.print("std::vector<%s> %s;\n", i.value, i.key);
+            } else {
+                fmt.print("%s %s;\n", i.value, i.key);
+            }
         }
+        print_serialize_friend(fmt, block);
     }
     fmt.print("};\n");
 }

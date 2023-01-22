@@ -2,16 +2,16 @@ enum Calc {
     Add,
     Sub,
     Mul,
-    Div
+    Div,
 }
 
 enum Result {
     Ok,
-    Err(int)
+    Err(int),
 }
 
 class User {
     id: int,
     follows: List<int>,
-    state: Result
+    state: Result,
 }

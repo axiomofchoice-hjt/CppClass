@@ -27,17 +27,29 @@ void __fromJson(Iter &it, int64_t &data) {
     sscanf(&*it, "%ld%n", &data, &len);
     it += len;
 }
-std::string __jsonEnumGet(Iter &it) {
-    while (*it != '.') {
+void __jsonIgnoreSpace(Iter &it) {
+    while (isspace(*it)) {
         ++it;
     }
+}
+char __jsonGetFirstChar(Iter &it) {
+    __jsonIgnoreSpace(it);
+    char res = *it;
     ++it;
+    return res;
+}
+std::string __jsonGetFirstKey(Iter &it) {
+    if (__jsonGetFirstChar(it) == '}') {
+        --it;
+        return std::string();
+    }
     auto l = it;
     while (*it != '"') {
         ++it;
     }
     auto r = it;
-    it += 2;
+    __jsonGetFirstChar(it);
+    __jsonGetFirstChar(it);
     return std::string(l, r);
 }
 }  // namespace Json
