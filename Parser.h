@@ -10,7 +10,9 @@ class Element {
    public:
     std::string key;
     std::string value;
-    Element(std::string key, std::string value = "") : key(key), value(value) {}
+    bool isList;
+    explicit Element(const std::string &key);
+    Element(const std::string &key, const std::string &value);
 };
 
 enum class BlockType {

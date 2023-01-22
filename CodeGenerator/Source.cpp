@@ -158,6 +158,8 @@ std::string CodeGenerator::source(const std::string &baseName) {
                     fmt.print(
                         "const %s &%s::get_%s() const { return __data.%s; };\n",
                         i.value, block.name, i.key, i.key);
+                    fmt.print("%s &%s::get_%s() { return __data.%s; };\n",
+                              i.value, block.name, i.key, i.key);
                 }
             }
             // to binary
@@ -263,7 +265,8 @@ std::string CodeGenerator::source(const std::string &baseName) {
                 fmt.print("    __it += 4;\n");
                 fmt.print("}");
                 for (auto i : block.elements) {
-                    fmt.print_without_indent(" else if (__tmp == \"%s\") {\n", i.key);
+                    fmt.print_without_indent(" else if (__tmp == \"%s\") {\n",
+                                             i.key);
                     fmt.print("    __object.__tag = %s::__Tag::%s;\n",
                               block.name, i.key);
                     if (i.value.empty()) {

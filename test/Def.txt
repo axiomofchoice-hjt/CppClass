@@ -10,8 +10,8 @@ enum Result {
     Err(int)
 }
 
-class cl {
-    a: int,
-    b: Calc,
-    c: Result
+class User {
+    id: int,
+    follows: List<int>,
+    state: Result
 }

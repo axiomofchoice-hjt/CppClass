@@ -2,5 +2,5 @@
 
 namespace Compiler {
 CodeGenerator::CodeGenerator(const std::vector<Block> &blocks)
-    : indent(4), blocks(blocks) {}
+    : blocks(blocks) {}
 }  // namespace Compiler
