@@ -1,25 +1,18 @@
 #pragma once
-#include <string>
+#include <fmt/core.h>
 
-const char *find_placeholder(const char *s);
+#include <string>
+#include <utility>
 
 class Recv {
    public:
     std::string data;
-    void append(const std::string &s);
-    void append(const char *s);
-    template <class T>
-    void append(const T &s) {
-        data += std::to_string(s);
-    }
-    void append_format(const char *s);
 
-    template <class T, class... Args>
-    void append_format(const char *s, const T &arg, Args... rest) {
-        const char *t = find_placeholder(s);
-        append(std::string(s, t));
-        append(arg);
-        append_format(t + 2, rest...);
+    void append(const std::string &arg) { data.append(arg); }
+
+    template <class... Args>
+    void append_format(Args &&...args) {
+        data.append(fmt::format(std::move(args)...));
     }
 };
 

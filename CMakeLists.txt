@@ -12,9 +12,6 @@ add_compile_options(-Wall)
 # set(THREADS_PREFER_PTHREAD_FLAG ON) find_package(Threads)
 # target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 
-find_package(fmt)
-target_link_libraries(${PROJECT_NAME} fmt)
-
 add_subdirectory(File)
 target_link_libraries(${PROJECT_NAME} File)
 
