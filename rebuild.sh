@@ -1,3 +1,3 @@
 rm build/* -rf
 cd build
-cmake .. && make
+cmake .. && make -j

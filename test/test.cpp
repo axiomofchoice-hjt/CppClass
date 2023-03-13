@@ -49,29 +49,29 @@ void enum_test() {
     assert(r.is_Err());
     assert(r.get_Err() == 233);
 
-    auto serial = CppClass::toBinary(r);
+    auto serial = AxMarshal::toBinary(r);
     for (auto i : serial) {
         printf("%u ", i);
     }
     puts("");
-    auto r2 = CppClass::fromBinary<Result>(serial);
+    auto r2 = AxMarshal::fromBinary<Result>(serial);
     assert(r2.is_Err());
     assert(r2.get_Err() == 233);
 
-    printf("%s\n", CppClass::toJson(Result()).c_str());
-    printf("%s\n", CppClass::toJson(Result::Ok()).c_str());
-    printf("%s\n", CppClass::toJson(Result::Err(233)).c_str());
+    printf("%s\n", AxMarshal::toJson(Result()).c_str());
+    printf("%s\n", AxMarshal::toJson(Result::Ok()).c_str());
+    printf("%s\n", AxMarshal::toJson(Result::Err(233)).c_str());
 
     std::string str = "  {  }  ";
-    assert(CppClass::fromJson<Result>(str) == nullptr);
+    assert(AxMarshal::fromJson<Result>(str) == nullptr);
     str = "  {  \"Ok\"  :  null  }  ";
-    assert(CppClass::fromJson<Result>(str).is_Ok());
+    assert(AxMarshal::fromJson<Result>(str).is_Ok());
     str = "  {  \"Err\"  :  233  }  ";
-    assert(CppClass::fromJson<Result>(str).is_Err());
-    assert(CppClass::fromJson<Result>(str).get_Err() == 233);
+    assert(AxMarshal::fromJson<Result>(str).is_Err());
+    assert(AxMarshal::fromJson<Result>(str).get_Err() == 233);
     str = "{\"Err\":-111111111}";
-    assert(CppClass::fromJson<Result>(str).is_Err());
-    assert(CppClass::fromJson<Result>(str).get_Err() == -111111111);
+    assert(AxMarshal::fromJson<Result>(str).is_Err());
+    assert(AxMarshal::fromJson<Result>(str).get_Err() == -111111111);
 }
 
 void class_test() {
@@ -83,14 +83,14 @@ void class_test() {
         user.follows.push_back(3);
         user.follows.push_back(4);
         user.state = Result::Err(233);
-        bin = CppClass::toBinary(user);
+        bin = AxMarshal::toBinary(user);
         for (auto i : bin) {
             printf("%u ", i);
         }
         puts("");
     }
     {
-        User user = CppClass::fromBinary<User>(bin);
+        User user = AxMarshal::fromBinary<User>(bin);
         assert(user.id == 1);
         assert(user.follows.size() == 3);
         assert(user.follows[0] == 2);
@@ -99,10 +99,10 @@ void class_test() {
         assert(user.state.is_Err());
         assert(user.state.get_Err() == 233);
 
-        printf("%s\n", CppClass::toJson(user).c_str());
+        printf("%s\n", AxMarshal::toJson(user).c_str());
     }
     {
-        User user = CppClass::fromJson<User>(
+        User user = AxMarshal::fromJson<User>(
             "  {  "
             "\"id\"  :  1  ,  "
             "\"follows\"  :  [  2  ,  3  ,  4  ]  ,  "
@@ -117,7 +117,7 @@ void class_test() {
         assert(user.state.get_Err() == 233);
     }
     {
-        User user = CppClass::fromJson<User>(
+        User user = AxMarshal::fromJson<User>(
             "{"
             "\"id\":21,"
             "\"follows\":[],"

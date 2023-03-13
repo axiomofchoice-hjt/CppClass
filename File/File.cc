@@ -1,5 +1,7 @@
 #include "File.h"
 
+#include <cstdio>
+
 File::File(const std::string &path) : path(path) {}
 
 std::string File::read() const {

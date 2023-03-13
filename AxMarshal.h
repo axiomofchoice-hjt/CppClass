@@ -1,13 +1,13 @@
 #ifndef __CPP_CLASS_H
 #define __CPP_CLASS_H
 
-#include "CppClass/Bin.h"
-#include "CppClass/Json.h"
+#include "AxMarshal/Bin.h"
+#include "AxMarshal/Json.h"
 
 #define This static_cast<Derived *>(this)
 #define CThis static_cast<const Derived *>(this)
 
-namespace CppClass {
+namespace AxMarshal {
 template <class Derived>
 class SimpleEnum {
    public:
@@ -73,7 +73,7 @@ class ComplexEnum {
         return CThis->__tag != Derived::__Tag::__UNDEF;
     }
 };
-}  // namespace CppClass
+}  // namespace AxMarshal
 
 #undef CThis
 #undef This

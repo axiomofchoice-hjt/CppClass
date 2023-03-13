@@ -1,6 +1,6 @@
 #include "Json.h"
 
-namespace CppClass {
+namespace AxMarshal {
 namespace Json {
 void __toJson(Str &res, const uint32_t &data) { res += std::to_string(data); }
 void __toJson(Str &res, const uint64_t &data) { res += std::to_string(data); }
@@ -53,4 +53,4 @@ std::string __jsonGetFirstKey(Iter &it) {
     return std::string(l, r);
 }
 }  // namespace Json
-}  // namespace CppClass
+}  // namespace AxMarshal

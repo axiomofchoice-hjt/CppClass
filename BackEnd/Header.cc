@@ -1,10 +1,10 @@
-#include "../CodeGenerator.h"
 #include "../Fmt.h"
+#include "BackEnd.h"
 
-namespace Compiler {
-static void print_serialize_declare(Fmt &fmt, const Block &block) {
+namespace BackEnd {
+static void print_serialize_declare(Fmt &fmt, const FrontEnd::Block &block) {
     fmt.print("class %s;\n", block.name);
-    fmt.print("namespace CppClass {\n");
+    fmt.print("namespace AxMarshal {\n");
     fmt.print("namespace Bin {\n");
     fmt.print("void __toBinary(Bytes &, const %s &);\n", block.name);
     fmt.print("void __fromBinary(Iter &, %s &);\n", block.name);
@@ -15,31 +15,32 @@ static void print_serialize_declare(Fmt &fmt, const Block &block) {
     fmt.print("}\n");
     fmt.print("}\n");
 }
-static void print_serialize_friend(Fmt &fmt, const Block &block) {
+static void print_serialize_friend(Fmt &fmt, const FrontEnd::Block &block) {
     // to binary
     fmt.print(
-        "friend void CppClass::Bin::__toBinary(CppClass::Bin::Bytes &, const "
+        "friend void AxMarshal::Bin::__toBinary(AxMarshal::Bin::Bytes &, const "
         "%s &);\n",
         block.name);
     fmt.print(
-        "friend void CppClass::Bin::__fromBinary(CppClass::Bin::Iter &, %s "
+        "friend void AxMarshal::Bin::__fromBinary(AxMarshal::Bin::Iter &, %s "
         "&);\n",
         block.name);
     // to json
     fmt.print(
-        "friend void CppClass::Json::__toJson(CppClass::Json::Str &, const %s "
+        "friend void AxMarshal::Json::__toJson(AxMarshal::Json::Str &, const "
+        "%s "
         "&);\n",
         block.name);
     fmt.print(
-        "friend void CppClass::Json::__fromJson(CppClass::Json::Iter &, %s "
+        "friend void AxMarshal::Json::__fromJson(AxMarshal::Json::Iter &, %s "
         "&);\n",
         block.name);
 }
 
-void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
+void CodeGenerator::__enum_header(Fmt &fmt, const FrontEnd::Block &block) {
     bool use_union = block.isComplexEnum();
     print_serialize_declare(fmt, block);
-    fmt.print("class %s : public CppClass::%s<%s> {\n", block.name,
+    fmt.print("class %s : public AxMarshal::%s<%s> {\n", block.name,
               use_union ? "ComplexEnum" : "SimpleEnum", block.name);
     {
         auto guard = fmt.indent_guard();
@@ -104,13 +105,13 @@ void CodeGenerator::__enum_header(Fmt &fmt, const Block &block) {
         }
         print_serialize_friend(fmt, block);
         // friend
-        fmt.print("friend CppClass::%s<%s>;\n",
+        fmt.print("friend AxMarshal::%s<%s>;\n",
                   use_union ? "ComplexEnum" : "SimpleEnum", block.name);
     }
     fmt.print("};\n");
 }
 
-void CodeGenerator::__class_header(Fmt &fmt, const Block &block) {
+void CodeGenerator::__class_header(Fmt &fmt, const FrontEnd::Block &block) {
     print_serialize_declare(fmt, block);
     fmt.print("class %s {\n", block.name);
     {
@@ -133,14 +134,14 @@ std::string CodeGenerator::header() {
     fmt.print("#pragma once\n\n");
     fmt.print("#include <string>\n");
     fmt.print("#include <vector>\n\n");
-    fmt.print("#include \"../CppClass.h\"\n\n");
-    for (const Block &block : blocks) {
-        if (block.type == BlockType::Enum) {
+    fmt.print("#include \"../AxMarshal.h\"\n\n");
+    for (const FrontEnd::Block &block : blocks) {
+        if (block.type == FrontEnd::Block::Type::Enum) {
             __enum_header(fmt, block);
-        } else if (block.type == BlockType::Class) {
+        } else if (block.type == FrontEnd::Block::Type::Class) {
             __class_header(fmt, block);
         }
     }
     return fmt.recv.data;
 }
-}  // namespace Compiler
+}  // namespace BackEnd

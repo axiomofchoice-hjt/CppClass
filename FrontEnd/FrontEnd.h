@@ -3,9 +3,17 @@
 #include <string>
 #include <vector>
 
-#include "Lexer.h"
+namespace FrontEnd {
+class Word {
+   public:
+    std::string value;
 
-namespace Compiler {
+    Word(const std::string &value) : value(value) {}
+    bool isName() const;
+};
+
+std::vector<Word> Lexer(const std::string &s);
+
 class Element {
    public:
     std::string key;
@@ -15,14 +23,14 @@ class Element {
     Element(const std::string &key, const std::string &value);
 };
 
-enum class BlockType {
-    Enum,
-    Class,
-};
-
 class Block {
    public:
-    BlockType type;
+    enum class Type {
+        Enum,
+        Class,
+    };
+
+    Type type;
     std::string name;
     std::vector<Element> elements;
 
@@ -34,4 +42,4 @@ class Block {
 };
 
 std::vector<Block> Parser(const std::vector<Word> &words);
-}  // namespace Compiler
+}  // namespace FrontEnd

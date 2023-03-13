@@ -1,9 +1,9 @@
 #include "../BuiltinTypes.h"
-#include "../CodeGenerator.h"
 #include "../Fmt.h"
+#include "BackEnd.h"
 
-namespace Compiler {
-void CodeGenerator::__enum_source(Fmt &fmt, const Block &block) {
+namespace BackEnd {
+void CodeGenerator::__enum_source(Fmt &fmt, const FrontEnd::Block &block) {
     bool use_union = block.isComplexEnum();
     // constructor
     Recv t;
@@ -148,7 +148,7 @@ void CodeGenerator::__enum_source(Fmt &fmt, const Block &block) {
         }
     }
     // to binary
-    fmt.print("namespace CppClass {\n");
+    fmt.print("namespace AxMarshal {\n");
     fmt.print("namespace Bin {\n");
     fmt.print("void __toBinary(Bytes &__res, const %s &__object) {\n",
               block.name);
@@ -259,8 +259,8 @@ void CodeGenerator::__enum_source(Fmt &fmt, const Block &block) {
     fmt.print("}\n");
     fmt.print("}\n");
 }
-void CodeGenerator::__class_source(Fmt &fmt, const Block &block) {
-    fmt.print("namespace CppClass {\n");
+void CodeGenerator::__class_source(Fmt &fmt, const FrontEnd::Block &block) {
+    fmt.print("namespace AxMarshal {\n");
     fmt.print("namespace Bin {\n");
     fmt.print("void __toBinary(Bytes &__res, const %s &__object) {\n",
               block.name);
@@ -376,12 +376,12 @@ std::string CodeGenerator::source(const std::string &baseName) {
     fmt.print("#include \"%s.h\"\n\n", baseName);
     fmt.print("#include <utility>\n\n");
     for (auto block : blocks) {
-        if (block.type == BlockType::Enum) {
+        if (block.type == FrontEnd::Block::Type::Enum) {
             __enum_source(fmt, block);
-        } else if (block.type == BlockType::Class) {
+        } else if (block.type == FrontEnd::Block::Type::Class) {
             __class_source(fmt, block);
         }
     }
     return fmt.recv.data;
 }
-}  // namespace Compiler
+}  // namespace BackEnd

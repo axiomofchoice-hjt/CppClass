@@ -1,6 +1,6 @@
 #include "Bin.h"
 
-namespace CppClass {
+namespace AxMarshal {
 namespace Bin {
 void __toBinary(Bytes &res, const uint32_t &data) {
     res.push_back(data & 0xff);
@@ -46,4 +46,4 @@ void __fromBinary(Iter &it, int64_t &data) {
     data = tmp;
 }
 }  // namespace Bin
-}  // namespace CppClass
+}  // namespace AxMarshal

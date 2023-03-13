@@ -1,9 +1,8 @@
 #include "Compiler.h"
 
-#include "CodeGenerator.h"
-#include "File.h"
-#include "Lexer.h"
-#include "Parser.h"
+#include "BackEnd/BackEnd.h"
+#include "File/File.h"
+#include "FrontEnd/FrontEnd.h"
 
 namespace Compiler {
 void Compile(const std::string &input, std::string output) {
@@ -13,9 +12,9 @@ void Compile(const std::string &input, std::string output) {
     }
 
     std::string input_str = input_file.read();
-    auto words = Lexer(input_str);
-    auto blocks = Parser(words);
-    CodeGenerator gen(blocks);
+    auto words = FrontEnd::Lexer(input_str);
+    auto blocks = FrontEnd::Parser(words);
+    BackEnd::CodeGenerator gen(blocks);
 
     if (output.empty()) {
         throw "output_dir is empty";

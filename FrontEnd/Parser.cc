@@ -1,6 +1,6 @@
-#include "Parser.h"
+#include "FrontEnd.h"
 
-namespace Compiler {
+namespace FrontEnd {
 Element::Element(const std::string &key) : key(key), value(), isList(false) {}
 Element::Element(const std::string &key, const std::string &value)
     : key(key), value(value), isList(false) {}
@@ -72,7 +72,7 @@ void Block::parseClassContent(std::vector<Word>::const_iterator l,
 }
 
 bool Block::isComplexEnum() const {
-    if (type != BlockType::Enum) {
+    if (type != Block::Type::Enum) {
         return false;
     }
     for (auto i : elements) {
@@ -93,9 +93,9 @@ std::vector<Block> Parser(const std::vector<Word> &words) {
         }
 
         if (word->value == "enum") {
-            block.type = BlockType::Enum;
+            block.type = Block::Type::Enum;
         } else if (word->value == "class") {
-            block.type = BlockType::Class;
+            block.type = Block::Type::Class;
         } else {
             throw "block should begin with `enum` or `class`";
         }
@@ -116,9 +116,9 @@ std::vector<Block> Parser(const std::vector<Word> &words) {
         if (rbrace == words.end()) {
             throw "block need `}`";
         }
-        if (block.type == BlockType::Enum) {
+        if (block.type == Block::Type::Enum) {
             block.parseEnumContent(word, rbrace);
-        } else if (block.type == BlockType::Class) {
+        } else if (block.type == Block::Type::Class) {
             block.parseClassContent(word, rbrace);
         }
         res.push_back(block);
@@ -126,4 +126,4 @@ std::vector<Block> Parser(const std::vector<Word> &words) {
     }
     return res;
 }
-}  // namespace Compiler
+}  // namespace FrontEnd

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace CppClass {
+namespace AxMarshal {
 namespace Json {
 using Str = std::string;
 using Iter = Str::const_iterator;
@@ -48,4 +48,4 @@ template <typename T>
 T fromJson(const Json::Str &__json) {
     return Json::fromJson<T>(__json);
 }
-}  // namespace CppClass
+}  // namespace AxMarshal

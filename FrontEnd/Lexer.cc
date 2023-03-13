@@ -1,9 +1,9 @@
-#include "Lexer.h"
-
 #include <cctype>
 #include <functional>
 
-namespace Compiler {
+#include "FrontEnd.h"
+
+namespace FrontEnd {
 static const char *match(const char *s, const std::function<bool(char)> &f) {
     while (f(*s)) {
         s++;
@@ -49,4 +49,4 @@ std::vector<Word> Lexer(const std::string &s) {
     }
     return res;
 }
-}  // namespace Compiler
+}  // namespace FrontEnd

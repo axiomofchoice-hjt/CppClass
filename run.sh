@@ -1,4 +1,4 @@
 cd build
-cmake .. && make && ./CppClass ../test/Def.txt ../test
+cmake .. && make -j && ./AxMarshal ../test/Def.txt ../test
 cd ..
 ./test.sh

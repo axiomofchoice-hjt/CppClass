@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace CppClass {
+namespace AxMarshal {
 namespace Bin {
 using Bytes = std::vector<uint8_t>;
 using Iter = Bytes::const_iterator;
@@ -46,4 +46,4 @@ template <typename T>
 T fromBinary(const Bin::Bytes &__bin) {
     return Bin::fromBinary<T>(__bin);
 }
-}  // namespace CppClass
+}  // namespace AxMarshal

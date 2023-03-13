@@ -1,4 +1,4 @@
-# CppClass
+# AxMarshal
 
 随手写的类似 protobuf 的工具
 
@@ -59,7 +59,7 @@ class User {
 
 ## 序列化
 
-- `CppClass::toBinary(res)` 得到二进制序列化的结果，类型为 `std::vector<uint8_t>`
-- `CppClass::fromBinary<Result>(vec)` 得到二进制反序列化的结果，参数类型是 `std::vector<uint8_t>`，结果类型是 `Result`
-- `CppClass::toJson(res)` 得到 Json 序列化的结果，类型为 `std::string`
-- `CppClass::fromJson<Result>(str)` 得到 Json 反序列化的结果，参数类型是 `std::string`，结果类型是 `Result`
+- `AxMarshal::toBinary(res)` 得到二进制序列化的结果，类型为 `std::vector<uint8_t>`
+- `AxMarshal::fromBinary<Result>(vec)` 得到二进制反序列化的结果，参数类型是 `std::vector<uint8_t>`，结果类型是 `Result`
+- `AxMarshal::toJson(res)` 得到 Json 序列化的结果，类型为 `std::string`
+- `AxMarshal::fromJson<Result>(str)` 得到 Json 反序列化的结果，参数类型是 `std::string`，结果类型是 `Result`
