@@ -24,7 +24,7 @@ void Compile(const std::string &input, std::string output) {
     }
 
     File(output + input_file.baseName() + ".h").write(gen.header());
-    File(output + input_file.baseName() + ".cpp")
+    File(output + input_file.baseName() + ".cc")
         .write(gen.source(input_file.baseName()));
 }
 }  // namespace Compiler

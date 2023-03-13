@@ -1,5 +1,2 @@
 build/
 !CMakeLists.txt
-test/*
-!test/test.cpp
-!test/Def.txt

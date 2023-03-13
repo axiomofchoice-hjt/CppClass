@@ -1,8 +1,8 @@
 #ifndef __CPP_CLASS_H
 #define __CPP_CLASS_H
 
-#include "AxMarshal/Bin.h"
-#include "AxMarshal/Json.h"
+#include "Bin.h"
+#include "Json.h"
 
 #define This static_cast<Derived *>(this)
 #define CThis static_cast<const Derived *>(this)

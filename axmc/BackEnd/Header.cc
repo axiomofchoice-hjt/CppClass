@@ -1,5 +1,5 @@
-#include "../Fmt.h"
 #include "BackEnd.h"
+#include "Fmt.h"
 
 namespace BackEnd {
 static void print_serialize_declare(Fmt &fmt, const FrontEnd::Block &block) {
@@ -134,7 +134,7 @@ std::string CodeGenerator::header() {
     fmt.print("#pragma once\n\n");
     fmt.print("#include <string>\n");
     fmt.print("#include <vector>\n\n");
-    fmt.print("#include \"../AxMarshal.h\"\n\n");
+    fmt.print("#include \"axm/AxMarshal.h\"\n\n");
     for (const FrontEnd::Block &block : blocks) {
         if (block.type == FrontEnd::Block::Type::Enum) {
             __enum_header(fmt, block);

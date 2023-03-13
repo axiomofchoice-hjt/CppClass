@@ -1,21 +1,20 @@
-#include "../BuiltinTypes.h"
-#include "../Fmt.h"
 #include "BackEnd.h"
+#include "BuiltinTypes.h"
+#include "Fmt.h"
 
 namespace BackEnd {
 void CodeGenerator::__enum_source(Fmt &fmt, const FrontEnd::Block &block) {
     bool use_union = block.isComplexEnum();
     // constructor
-    Recv t;
-    t.append_format("__tag(__Tag::__UNDEF)");
+    std::string t = "__tag(__Tag::__UNDEF)";
     if (use_union) {
-        t.append_format(", __data()");
+        t.append(", __data()");
     }
-    fmt.print("{}::{}() : {} {{}}\n", block.name, block.name, t.data);
+    fmt.print("{}::{}() : {} {{}}\n", block.name, block.name, t);
     fmt.print("{}::{}({} &&other) : {} {{ __assign(std::move(other)); }}\n",
-              block.name, block.name, block.name, t.data);
+              block.name, block.name, block.name, t);
     fmt.print("{}::{}(const {} &other) : {} {{ __assign(other); }}\n",
-              block.name, block.name, block.name, t.data);
+              block.name, block.name, block.name, t);
 
     // deconstructor
     fmt.print("{}::~{}() {{ __del(); }}\n", block.name, block.name);
@@ -98,7 +97,7 @@ void CodeGenerator::__enum_source(Fmt &fmt, const FrontEnd::Block &block) {
             {
                 auto guard = fmt.indent_guard();
                 for (auto i : block.elements) {
-                    if (!i.value.empty() && !no_deconstructor.count(i.value)) {
+                    if (!i.value.empty() && !no_deconstructor(i.value)) {
                         fmt.print("case __Tag::{}:\n", i.key);
                         {
                             auto guard = fmt.indent_guard();

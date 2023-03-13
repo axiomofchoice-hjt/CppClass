@@ -4,20 +4,20 @@
 #include <string>
 #include <utility>
 
-class Recv {
-   public:
-    std::string data;
-
-    void append(const std::string &arg) { data.append(arg); }
-
-    template <class... Args>
-    void append_format(Args &&...args) {
-        data.append(fmt::format(std::move(args)...));
-    }
-};
-
 class Fmt {
    public:
+    class Recv {
+       public:
+        std::string data;
+
+        void append(const std::string &arg) { data.append(arg); }
+
+        template <class... Args>
+        void append_format(Args &&...args) {
+            data.append(fmt::format(std::move(args)...));
+        }
+    };
+
     Recv recv;
     size_t indent;
     Fmt() : recv(), indent() {}

@@ -1,2 +1,2 @@
 cd build
-cmake .. && make -j && ./AxMarshal ../test/Def.txt ../test && cd .. && ./test.sh
+cmake .. && make -j && cd .. && ./test.sh
